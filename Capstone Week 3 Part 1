@@ -1,0 +1,282 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Import all libraries"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Collecting package metadata (current_repodata.json): done\n",
+      "Solving environment: done\n",
+      "\n",
+      "# All requested packages already installed.\n",
+      "\n",
+      "Libraries imported.\n"
+     ]
+    }
+   ],
+   "source": [
+    "import numpy as np # library to handle data in a vectorized manner\n",
+    "\n",
+    "import pandas as pd # library for data analsysis\n",
+    "pd.set_option('display.max_columns', None)\n",
+    "pd.set_option('display.max_rows', None)\n",
+    "\n",
+    "import json # library to handle JSON files\n",
+    "\n",
+    "!conda install -c conda-forge geopy --yes\n",
+    "\n",
+    "#!conda install -c conda-forge geopy --yes # uncomment this line if you haven't completed the Foursquare API lab\n",
+    "from geopy.geocoders import Nominatim # convert an address into latitude and longitude values\n",
+    "\n",
+    "import requests # library to handle requests\n",
+    "from pandas.io.json import json_normalize # tranform JSON file into a pandas dataframe\n",
+    "\n",
+    "# Matplotlib and associated plotting modules\n",
+    "import matplotlib.cm as cm\n",
+    "import matplotlib.colors as colors\n",
+    "\n",
+    "# import k-means from clustering stage\n",
+    "from sklearn.cluster import KMeans\n",
+    "\n",
+    "#!conda install -c conda-forge folium=0.5.0 --yes # uncomment this line if you haven't completed the Foursquare API lab\n",
+    "import folium # map rendering library\n",
+    "\n",
+    "print('Libraries imported.')"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Create table"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Columns will be represented as COL_i and it's represetative dataset as vector_i"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "Col_1 ='PostalCode'\n",
+    "vector1= ['M5G','M2H','M4B','M1J','M4G','M4M','M1R','M9V','M9L','M5V','M1B','M5A']\n",
+    "Col_2 = 'Borough'\n",
+    "vector2 = ['Downtown Toronto','North York','East York','Scarborough','East York','East Toronto','Scarborough','Etobicoke','North York','Dowontown Toronto','Scarborough','Downtown Toronto']\n",
+    "Col3 = 'Neighborhood'\n",
+    "vector3 = ['Central Bay Street','Hillcrest Village','Parkview Hill, Woodbine Gardens','Scarborough Village', 'Leaside', 'Studio DIstrict', 'Wexford, Maryvale', 'South Steeless, Silverstone, Humbergate, Jamestown, Mount Olive, Beaumond Heights, Thistletown, Albon Gardens', 'Humber Summit','CN Tower, King and Spadina, Railway Lands, Habourfront West, Bathrust Quay, South Niagara, Island aiport','Malvern, Rouge','Regent Park, Harbourfront']\n",
+    "data = {Col_1:vector_1,Col_2:vector2,Col3:vector3}\n",
+    "df = pd.DataFrame(data)\n",
+    "df"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>PostalCode</th>\n",
+       "      <th>Borough</th>\n",
+       "      <th>Neighborhood</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>M5G</td>\n",
+       "      <td>Downtown Toronto</td>\n",
+       "      <td>Central Bay Street</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>M2H</td>\n",
+       "      <td>North York</td>\n",
+       "      <td>Hillcrest Village</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>M4B</td>\n",
+       "      <td>East York</td>\n",
+       "      <td>Parkview Hill, Woodbine Gardens</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>3</th>\n",
+       "      <td>M1J</td>\n",
+       "      <td>Scarborough</td>\n",
+       "      <td>Scarborough Village</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>4</th>\n",
+       "      <td>M4G</td>\n",
+       "      <td>East York</td>\n",
+       "      <td>Leaside</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>5</th>\n",
+       "      <td>M4M</td>\n",
+       "      <td>East Toronto</td>\n",
+       "      <td>Studio DIstrict</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>6</th>\n",
+       "      <td>M1R</td>\n",
+       "      <td>Scarborough</td>\n",
+       "      <td>Wexford, Maryvale</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>7</th>\n",
+       "      <td>M9V</td>\n",
+       "      <td>Etobicoke</td>\n",
+       "      <td>South Steeless, Silverstone, Humbergate, James...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>8</th>\n",
+       "      <td>M9L</td>\n",
+       "      <td>North York</td>\n",
+       "      <td>Humber Summit</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>9</th>\n",
+       "      <td>M5V</td>\n",
+       "      <td>Dowontown Toronto</td>\n",
+       "      <td>CN Tower, King and Spadina, Railway Lands, Hab...</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>10</th>\n",
+       "      <td>M1B</td>\n",
+       "      <td>Scarborough</td>\n",
+       "      <td>Malvern, Rouge</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>11</th>\n",
+       "      <td>M5A</td>\n",
+       "      <td>Downtown Toronto</td>\n",
+       "      <td>Regent Park, Harbourfront</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "   PostalCode            Borough  \\\n",
+       "0         M5G   Downtown Toronto   \n",
+       "1         M2H         North York   \n",
+       "2         M4B          East York   \n",
+       "3         M1J        Scarborough   \n",
+       "4         M4G          East York   \n",
+       "5         M4M       East Toronto   \n",
+       "6         M1R        Scarborough   \n",
+       "7         M9V          Etobicoke   \n",
+       "8         M9L         North York   \n",
+       "9         M5V  Dowontown Toronto   \n",
+       "10        M1B        Scarborough   \n",
+       "11        M5A   Downtown Toronto   \n",
+       "\n",
+       "                                         Neighborhood  \n",
+       "0                                  Central Bay Street  \n",
+       "1                                   Hillcrest Village  \n",
+       "2                     Parkview Hill, Woodbine Gardens  \n",
+       "3                                 Scarborough Village  \n",
+       "4                                             Leaside  \n",
+       "5                                     Studio DIstrict  \n",
+       "6                                   Wexford, Maryvale  \n",
+       "7   South Steeless, Silverstone, Humbergate, James...  \n",
+       "8                                       Humber Summit  \n",
+       "9   CN Tower, King and Spadina, Railway Lands, Hab...  \n",
+       "10                                     Malvern, Rouge  \n",
+       "11                          Regent Park, Harbourfront  "
+      ]
+     },
+     "execution_count": 20,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "columns = ['PostalCode', 'Borough', 'Neighborhood']\n",
+    "toronto_data = pd.DataFrame(data)\n",
+    "toronto_data\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python",
+   "language": "python",
+   "name": "conda-env-python-py"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
